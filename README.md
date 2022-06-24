@@ -2,10 +2,10 @@
 
 ## Description
 
-#
+This is the 12th project for Driven Education's Fullstack Developer bootcamp.
 
-## This is the 12th project for Driven Education's Fullstack Developer bootcamp.
+A localhost API for a retro-style mobile chat app "Bate papo UOL". 
 
-## A localhost API for a retro-style mobile chat app "Bate papo UOL". Built using Nodejs, Express and MongoDB database.
+Built using Nodejs, Express and MongoDB database.
 
-#
+
