@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import chalk from "chalk";
 import dotenv from "dotenv";
+import { MongoClient } from "mongodb";
 import joi from "joi";
 
 dotenv.config();
@@ -14,10 +15,12 @@ const participants = [];
 const messages = [];
 const fullStatus = [];
 
-app.get("/test", (_, res) => {
-  res.send(
-    `Hello, ${process.env.USER_NAME}! the server is running on port ${process.env.PORT}.`
-  );
+let db;
+const mongoClient = new MongoClient(process.env.MONGO_URI);
+
+mongoClient.connect().then(() => {
+  db = mongoClient.db("bate_papo_uol");
+  console.log(chalk.magenta.bold("MongoDB connected"));
 });
 
 app.post("/participants", (req, res) => {
