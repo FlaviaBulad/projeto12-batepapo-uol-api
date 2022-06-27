@@ -139,10 +139,27 @@ app.get("/messages", async (req, res) => {
   }
 });
 
-app.post("/status", (req, res) => {
-  // const status = req.body.status;
-  // fullStatus.push(status);
-  res.sendStatus(200);
+app.post("/status", async (req, res) => {
+  const { user } = req.headers;
+
+  try {
+    await mongoClient.connect();
+    const participantExists = await db
+      .collection("participants")
+      .findOne({ name: user });
+
+    if (!participantExists) {
+      return res.status(404).send("Participant not found");
+    }
+
+    await db
+      .collection("participants")
+      .updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
+    res.sendStatus(200);
+  } catch (error) {
+    res.status(500).send("Post update status error");
+    mongoClient.close();
+  }
 });
 
 app.listen(process.env.PORT, () => {
