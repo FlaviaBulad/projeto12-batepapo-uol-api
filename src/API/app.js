@@ -47,12 +47,13 @@ app.post("/participants", async (req, res) => {
       .collection("participants")
       .insertOne({ name: participant.name, lastStatus: Date.now() });
     await db.collection("messages").insertOne({
-      from: "xxx",
+      from: participant.name,
       to: "Todos",
       text: "entra na sala...",
       type: "status",
-      time: "HH:MM:SS",
+      time: dayjs().format("HH:MM:SS"),
     });
+    res.sendStatus(201);
   } catch (error) {
     res.status(500).send("Server error");
     mongoClient.close();
@@ -64,8 +65,8 @@ app.get("/participants", (req, res) => {
 });
 
 app.post("/messages", (req, res) => {
-  const message = req.body.message;
-  messages.push(message);
+  // const message = req.body.message;
+  // messages.push(message);
   res.sendStatus(201);
 });
 
@@ -74,8 +75,8 @@ app.get("/messages", (req, res) => {
 });
 
 app.post("/status", (req, res) => {
-  const status = req.body.status;
-  fullStatus.push(status);
+  // const status = req.body.status;
+  // fullStatus.push(status);
   res.sendStatus(200);
 });
 
