@@ -56,17 +56,18 @@ app.post("/participants", async (req, res) => {
     res.sendStatus(201);
     //
   } catch (error) {
-    res.status(500).send("Server error");
+    res.status(500).send("Post participants error");
     mongoClient.close(); //Close the current db connection, including all the child db instances
   }
 });
 
 app.get("/participants", async (req, res) => {
   try {
+    await mongoClient.connect();
     const participants = await db.collection("participants").find().toArray();
     res.send(participants);
   } catch (error) {
-    res.status(500).send("Server error");
+    res.status(500).send("Get participants error");
     mongoClient.close();
   }
 });
@@ -114,11 +115,26 @@ app.post("/messages", async (req, res) => {
 });
 
 app.get("/messages", async (req, res) => {
+  const limit = parseInt(req.query);
+  const { user } = req.headers;
+
   try {
+    await mongoClient.connect();
     const messages = await db.collection("messages").find().toArray();
-    res.send(messages);
+    const filterMessages = messages.filter((message) => {
+      const userMessages =
+        message.to === user || message.from === user || message.to === "Todos";
+      const publicMessages = message.type === "message";
+      return userMessages || publicMessages;
+    });
+
+    if (limit) {
+      return res.send(filterMessages.slice(-limit));
+    }
+
+    res.send(filterMessages);
   } catch (error) {
-    res.status(500).send("Server error");
+    res.status(500).send("Get messages error");
     mongoClient.close();
   }
 });
