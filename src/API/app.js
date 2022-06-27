@@ -162,6 +162,40 @@ app.post("/status", async (req, res) => {
   }
 });
 
+setInterval(async () => {
+  const limitSeconds = Date.now() - 10000;
+  try {
+    const inactiveParticipants = await db
+      .collection("participants")
+      .find({ lastStatus: { $lte: limitSeconds } }) //$lte selects the documents where the value of the field is less than or equal to the specified value.
+      .toArray();
+
+    if (inactiveParticipants.length > 0) {
+      const sendInactiveParticipantsMessages = inactiveParticipants.map(
+        (inactiveParticipant) => {
+          return {
+            from: inactiveParticipant.name,
+            to: "Todos",
+            text: "sai da sala...",
+            type: "status",
+            time: dayjs().format("HH:MM:SS"),
+          };
+        }
+      );
+      await db
+        .collection("messages")
+        .insertMany(sendInactiveParticipantsMessages);
+
+      await db
+        .collection("participants")
+        .deleteMany({ lastStatus: { $lte: limitSeconds } });
+    }
+  } catch (error) {
+    res.status(500).send("Remove inactive participants error");
+    mongoClient.close();
+  }
+}, 15000);
+
 app.listen(process.env.PORT, () => {
   console.log(
     chalk.green.bold(
