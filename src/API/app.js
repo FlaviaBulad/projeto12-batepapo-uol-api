@@ -4,16 +4,13 @@ import chalk from "chalk";
 import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
 import joi from "joi";
+import dayjs from "dayjs";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-const participants = [];
-const messages = [];
-const fullStatus = [];
 
 let db;
 const mongoClient = new MongoClient(process.env.MONGO_URI);
@@ -23,10 +20,43 @@ mongoClient.connect().then(() => {
   console.log(chalk.magenta.bold("MongoDB connected"));
 });
 
-app.post("/participants", (req, res) => {
-  const participant = req.body.name;
-  participants.push(participant);
-  res.send(participants);
+app.post("/participants", async (req, res) => {
+  const participant = req.body;
+
+  const participantSchema = joi.object({ name: joi.string().required() });
+  const validation = participantSchema.validate(participant, {
+    abortEarly: false,
+  });
+
+  if (validation.error) {
+    console.log(validation.error.details);
+    return res.sendStatus(422);
+  }
+
+  try {
+    await mongoClient.connect();
+    const participantExists = await db
+      .collection("participants")
+      .findOne({ name: participant.name });
+
+    if (participantExists) {
+      return res.status(409).send("Participant already exists");
+    }
+
+    await db
+      .collection("participants")
+      .insertOne({ name: participant.name, lastStatus: Date.now() });
+    await db.collection("messages").insertOne({
+      from: "xxx",
+      to: "Todos",
+      text: "entra na sala...",
+      type: "status",
+      time: "HH:MM:SS",
+    });
+  } catch (error) {
+    res.status(500).send("Server error");
+    mongoClient.close();
+  }
 });
 
 app.get("/participants", (req, res) => {
