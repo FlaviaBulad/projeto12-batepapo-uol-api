@@ -1,4 +1,4 @@
-import express from "express";
+import express, { json } from "express";
 import cors from "cors";
 import chalk from "chalk";
 import dotenv from "dotenv";
@@ -6,11 +6,10 @@ import { MongoClient } from "mongodb";
 import joi from "joi";
 import dayjs from "dayjs";
 
-dotenv.config();
-
 const app = express();
 app.use(cors());
 app.use(express.json());
+dotenv.config();
 
 let db;
 const mongoClient = new MongoClient(process.env.MONGO_URI);
@@ -23,9 +22,11 @@ mongoClient.connect().then(() => {
 app.post("/participants", async (req, res) => {
   const participant = req.body;
 
-  const participantSchema = joi.object({ name: joi.string().required() });
+  const participantSchema = joi.object({
+    name: joi.string().min(1).required(),
+  });
   const validation = participantSchema.validate(participant, {
-    abortEarly: false,
+    abortEarly: true,
   });
 
   if (validation.error) {
@@ -56,7 +57,7 @@ app.post("/participants", async (req, res) => {
     res.sendStatus(201);
     //
   } catch (error) {
-    res.status(500).send("Post participants error");
+    res.status(500).send("Post participants error", error);
     mongoClient.close(); //Close the current db connection, including all the child db instances
   }
 });
@@ -67,7 +68,7 @@ app.get("/participants", async (req, res) => {
     const participants = await db.collection("participants").find().toArray();
     res.send(participants);
   } catch (error) {
-    res.status(500).send("Get participants error");
+    res.status(500).send("Get participants error", error);
     mongoClient.close();
   }
 });
@@ -86,7 +87,7 @@ app.post("/messages", async (req, res) => {
 
   if (validation.error) {
     console.log(validation.error.details.map((d) => d.message));
-    return res.sendStatus(422);
+    return res.status(422).send(error.details.map((detail) => detail.message));
   }
   const { user } = req.headers;
 
@@ -115,7 +116,7 @@ app.post("/messages", async (req, res) => {
 });
 
 app.get("/messages", async (req, res) => {
-  const limit = parseInt(req.query);
+  const limit = parseInt(req.query.limit);
   const { user } = req.headers;
 
   try {
@@ -134,7 +135,7 @@ app.get("/messages", async (req, res) => {
 
     res.send(filterMessages);
   } catch (error) {
-    res.status(500).send("Get messages error");
+    res.status(500).send("Get messages error", error);
     mongoClient.close();
   }
 });

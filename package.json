@@ -19,7 +19,8 @@
     "joi": "^17.6.0",
     "kill-port": "^2.0.1",
     "mongodb": "^4.7.0",
-    "nodemon": "^2.0.18"
+    "nodemon": "^2.0.18",
+    "string-strip-html": "^9.1.12"
   },
   "devDependencies": {
     "prettier": "2.7.1"
