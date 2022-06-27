@@ -63,7 +63,7 @@ app.post("/participants", async (req, res) => {
 
 app.get("/participants", async (req, res) => {
   try {
-    await db.collection("participants").find().toArray();
+    const participants = await db.collection("participants").find().toArray();
     res.send(participants);
   } catch (error) {
     res.status(500).send("Server error");
@@ -71,10 +71,46 @@ app.get("/participants", async (req, res) => {
   }
 });
 
-app.post("/messages", (req, res) => {
-  // const message = req.body.message;
-  // messages.push(message);
-  res.sendStatus(201);
+app.post("/messages", async (req, res) => {
+  const message = req.body;
+
+  const messageSchema = joi.object({
+    to: joi.string().required(),
+    text: joi.string().required(),
+    type: joi.string().valid("message", "private_message").required(),
+  });
+  const validation = messageSchema.validate(message, {
+    abortEarly: false,
+  });
+
+  if (validation.error) {
+    console.log(validation.error.details.map((d) => d.message));
+    return res.sendStatus(422);
+  }
+  const { user } = req.headers;
+
+  try {
+    await mongoClient.connect();
+    const participant = await db
+      .collection("participants")
+      .findOne({ name: user });
+
+    if (!participant) {
+      return res.sendStatus(422);
+    }
+
+    await db.collection("messages").insertOne({
+      from: user,
+      to: message.to,
+      text: message.text,
+      type: message.type,
+      time: dayjs().format("HH:MM:SS"),
+    });
+    res.sendStatus(201);
+  } catch (error) {
+    res.status(422).send("Participant does not exist");
+    mongoClient.close();
+  }
 });
 
 app.get("/messages", (req, res) => {
