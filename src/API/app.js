@@ -113,8 +113,14 @@ app.post("/messages", async (req, res) => {
   }
 });
 
-app.get("/messages", (req, res) => {
-  res.status(200).send(messages);
+app.get("/messages", async (req, res) => {
+  try {
+    const messages = await db.collection("messages").find().toArray();
+    res.send(messages);
+  } catch (error) {
+    res.status(500).send("Server error");
+    mongoClient.close();
+  }
 });
 
 app.post("/status", (req, res) => {
