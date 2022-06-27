@@ -34,8 +34,8 @@ app.post("/participants", async (req, res) => {
   }
 
   try {
-    await mongoClient.connect();
-    const participantExists = await db
+    await mongoClient.connect(); // Connect to MongoDB using provided URI
+    const participantExists = await db //Checks if participant already exists on db
       .collection("participants")
       .findOne({ name: participant.name });
 
@@ -54,14 +54,21 @@ app.post("/participants", async (req, res) => {
       time: dayjs().format("HH:MM:SS"),
     });
     res.sendStatus(201);
+    //
+  } catch (error) {
+    res.status(500).send("Server error");
+    mongoClient.close(); //Close the current db connection, including all the child db instances
+  }
+});
+
+app.get("/participants", async (req, res) => {
+  try {
+    await db.collection("participants").find().toArray();
+    res.send(participants);
   } catch (error) {
     res.status(500).send("Server error");
     mongoClient.close();
   }
-});
-
-app.get("/participants", (req, res) => {
-  res.status(200).send(participants);
 });
 
 app.post("/messages", (req, res) => {
